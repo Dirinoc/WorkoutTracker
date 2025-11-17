@@ -1,8 +1,11 @@
-module cmd
+module WorkoutTracker
 
 go 1.25.3
 
-require github.com/ilyakaznacheev/cleanenv v1.5.0
+require (
+	github.com/ilyakaznacheev/cleanenv v1.5.0
+	github.com/lib/pq v1.10.9
+)
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
