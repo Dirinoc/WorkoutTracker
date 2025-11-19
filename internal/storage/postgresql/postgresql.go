@@ -3,6 +3,9 @@ package postgresql
 import (
 	"database/sql"
 	"fmt"
+	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type Storage struct {
@@ -14,7 +17,24 @@ func New() (*Storage, error) {
 
 	const op = "storage.postgresql.New"
 
-	connStr := "user=postgres password=32853835 dbname=workoutracker host=localhost port=5431 sslmode=disable"
+	// Загрузка переменных окружения из .env файла
+	if err := godotenv.Load(); err != nil {
+		return nil, fmt.Errorf("%s: error loading .env file %w", op, err)
+	}
+
+	// Запись переменных окружения для формирования connStr (строки подключения)
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbSSL := os.Getenv("DB_SSLMODE")
+
+	// Формирование connStr (строки подключения) из переменных окружения
+	connStr := fmt.Sprintf(
+		"user=%s password=%s dbname=%s host=%s port=%s sslmode=%s",
+		dbUser, dbPassword, dbName, dbHost, dbPort, dbSSL,
+	)
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"WorkoutTracker/cmd/internal/storage/postgresql"
+	"WorkoutTracker/internal/storage/postgresql"
 
 	_ "github.com/lib/pq"
 )
