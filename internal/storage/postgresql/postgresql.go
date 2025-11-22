@@ -70,7 +70,7 @@ func New() (*Storage, error) {
 }
 
 // Сохранение тренировки в базу данных
-func (s *Storage) SaveWorkout(user_id int, date time.Time, excercise string, weight int, sets int, reps int) (string, error) {
+func (s *Storage) SaveWorkout(user_id int, date time.Time, excercise []models.Excercise) (string, error) {
 
 	const op = "storage.postgresql.SaveWorkout"
 
@@ -93,16 +93,18 @@ func (s *Storage) SaveWorkout(user_id int, date time.Time, excercise string, wei
 	}
 
 	// Вставка упражнения в таблицу excercises
-	_, err = tx.Exec(
-		"INSERT INTO excercises(workoutsid, exc_name, weight, sets, reps) VALUES($1, $2, $3, $4, $5)",
-		workoutID,
-		excercise,
-		weight,
-		sets,
-		reps,
-	)
-	if err != nil {
-		return "", fmt.Errorf("%s: insert excercise: %w", op, err)
+	for _, ex := range excercise {
+		_, err = tx.Exec(
+			"INSERT INTO excercises(workoutsid, exc_name, weight, sets, reps) VALUES($1, $2, $3, $4, $5)",
+			workoutID,
+			ex.ExcName,
+			ex.Weight,
+			ex.Sets,
+			ex.Reps,
+		)
+		if err != nil {
+			return "", fmt.Errorf("%s: insert excercise: %w", op, err)
+		}
 	}
 
 	// Смотрим и подтверждаем указанные выше действия (так называемые транзакции)
