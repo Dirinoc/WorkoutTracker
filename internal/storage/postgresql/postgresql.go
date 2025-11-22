@@ -1,6 +1,7 @@
 package postgresql
 
 import (
+	"WorkoutTracker/internal/domain/models"
 	"database/sql"
 	"fmt"
 	"time"
@@ -10,20 +11,6 @@ import (
 
 type Storage struct {
 	db *sql.DB
-}
-
-type Excercise struct {
-	ExcName string
-	Weight  float64
-	Sets    int
-	Reps    int
-}
-
-type Workout struct {
-	ID         int
-	UserID     int
-	Date       time.Time
-	Excercises []Excercise
 }
 
 // Creating a new instance of storage (a database on PostgreSQL)
@@ -127,11 +114,11 @@ func (s *Storage) SaveWorkout(user_id int, date time.Time, excercise string, wei
 }
 
 // Получить тренировку из базы данных по ID
-func (s *Storage) GetWorkout(workoutid int) (*Workout, error) {
+func (s *Storage) GetWorkout(workoutid int) (*models.Workout, error) {
 
 	const op = "storage.postgresql.GetWorkout"
 
-	var w Workout
+	var w models.Workout
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, fmt.Errorf("%s: begin tx: %w", op, err)
@@ -157,7 +144,7 @@ func (s *Storage) GetWorkout(workoutid int) (*Workout, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var ex Excercise
+		var ex models.Excercise
 		if err := rows.Scan(&ex.ExcName, &ex.Weight, &ex.Sets, &ex.Reps); err != nil {
 			return nil, fmt.Errorf("%s: scan excercise: %w", op, err)
 		}
