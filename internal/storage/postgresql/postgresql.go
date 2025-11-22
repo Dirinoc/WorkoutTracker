@@ -3,10 +3,9 @@ package postgresql
 import (
 	"database/sql"
 	"fmt"
-	"os"
 	"time"
 
-	"github.com/joho/godotenv"
+	"WorkoutTracker/internal/config"
 )
 
 type Storage struct {
@@ -29,27 +28,13 @@ type Workout struct {
 
 // Creating a new instance of storage (a database on PostgreSQL)
 func New() (*Storage, error) {
-
 	const op = "storage.postgresql.New"
 
-	// Загрузка переменных окружения из .env файла
-	if err := godotenv.Load(); err != nil {
-		return nil, fmt.Errorf("%s: error loading .env file %w", op, err)
+	// Получаем connStr из функции
+	connStr, err := config.GetConnstr()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
-
-	// Запись переменных окружения для формирования connStr (строки подключения)
-	dbUser := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbSSL := os.Getenv("DB_SSLMODE")
-
-	// Формирование connStr (строки подключения) из переменных окружения
-	connStr := fmt.Sprintf(
-		"user=%s password=%s dbname=%s host=%s port=%s sslmode=%s",
-		dbUser, dbPassword, dbName, dbHost, dbPort, dbSSL,
-	)
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -181,3 +166,5 @@ func (s *Storage) GetWorkout(workoutid int) (*Workout, error) {
 
 	return &w, nil
 }
+
+// TODO: Implement DeleteWorkout function

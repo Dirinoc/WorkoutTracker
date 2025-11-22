@@ -1,10 +1,12 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -44,4 +46,27 @@ func MustLoad() *Config {
 	}
 
 	return &cfg
+}
+
+func GetConnstr() (string, error) {
+	// Загрузка переменных окружения из .env файла
+	if err := godotenv.Load(); err != nil {
+		return "", fmt.Errorf("error loading .env file: %w", err)
+	}
+
+	// Запись переменных окружения для формирования connStr (строки подключения)
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbSSL := os.Getenv("DB_SSLMODE")
+
+	// Формирование connStr (строки подключения) из переменных окружения
+	connStr := fmt.Sprintf(
+		"user=%s password=%s dbname=%s host=%s port=%s sslmode=%s",
+		dbUser, dbPassword, dbName, dbHost, dbPort, dbSSL,
+	)
+
+	return connStr, nil
 }
