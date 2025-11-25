@@ -157,3 +157,28 @@ func (s *Storage) GetWorkout(workoutid int) (*models.Workout, error) {
 }
 
 // TODO: Implement DeleteWorkout function
+func (s *Storage) DeleteWorkout(workoutid int) error {
+	const op = "storage.postgresql.DeleteWorkout"
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return fmt.Errorf("%s: begin tx: %w", op, err)
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Exec(
+		"DELETE FROM excercises WHERE workoutsid = $1",
+		workoutid,
+	)
+
+	_, err = tx.Exec(
+		"DELETE FROM workouts WHERE id = $1",
+		workoutid,
+	)
+
+	if err != nil {
+		return fmt.Errorf("%s: delete excercises: %w", op, err)
+	}
+
+	return nil
+}
