@@ -1,4 +1,4 @@
-package save
+package handlers
 
 import (
 	"WorkoutTracker/internal/domain/models"
@@ -89,4 +89,9 @@ func New(workout WorkoutSaver) gin.HandlerFunc {
 			WorkoutID: int(id),
 		})
 	}
+}
+
+func DeleteWorkout(req Request) {
+	const op = "handlers.workout.delete.DeleteWorkout"
+
 }
