@@ -1,4 +1,4 @@
-package http
+package save
 
 import (
 	"WorkoutTracker/internal/domain/models"

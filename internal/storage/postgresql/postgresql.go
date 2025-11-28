@@ -17,11 +17,13 @@ type Storage struct {
 func New() (*Storage, error) {
 	const op = "storage.postgresql.New"
 
-	// Получаем connStr из функции
-	connStr, err := config.GetConnstr()
+	cfg, err := config.MustLoad()
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
+
+	// Получаем connStr из структуры
+	connStr := cfg.ConnStr()
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -156,7 +158,6 @@ func (s *Storage) GetWorkout(workoutid int) (*models.Workout, error) {
 	return &w, nil
 }
 
-// TODO: Implement DeleteWorkout function
 func (s *Storage) DeleteWorkout(workoutid int) error {
 	const op = "storage.postgresql.DeleteWorkout"
 

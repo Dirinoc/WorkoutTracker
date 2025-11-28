@@ -14,6 +14,7 @@ type Config struct {
 	StoragePath string `yaml:"storage_path" env-required:"true"`
 	HTTPServer  `yaml:"http_server"`
 	AppSecret   string `yaml:"app_secret" env-required:"true" env:"APP_SECRET"`
+	DB          `yaml:"db"`
 }
 
 type HTTPServer struct {
@@ -29,44 +30,39 @@ type Client struct {
 	Insecure     bool          `yaml:"insecure"`
 }
 
-func MustLoad() *Config {
+type DB struct {
+	User     string `env:"DB_USER"     yaml:"user"`
+	Password string `env:"DB_PASSWORD" yaml:"password"`
+	Name     string `env:"DB_NAME"     yaml:"name"`
+	Host     string `env:"DB_HOST"     yaml:"host"`
+	Port     string `env:"DB_PORT"     yaml:"port"`
+	SSLMode  string `env:"DB_SSLMODE"  yaml:"sslmode"`
+}
+
+func MustLoad() (*Config, error) {
+	_ = godotenv.Load()
+
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
-		panic("CONFIG_PATH is not set")
-	}
-
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		panic("config file does not exist: " + configPath)
+		configPath = "config.yaml"
 	}
 
 	var cfg Config
 
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
-		panic("cannot read config: " + err.Error())
+		return nil, err
 	}
 
-	return &cfg
+	if err := cleanenv.ReadEnv(&cfg); err != nil {
+		return nil, err
+	}
+
+	return &cfg, nil
 }
 
-func GetConnstr() (string, error) {
-	// Загрузка переменных окружения из .env файла
-	if err := godotenv.Load(); err != nil {
-		return "", fmt.Errorf("error loading .env file: %w", err)
-	}
-
-	// Запись переменных окружения для формирования connStr (строки подключения)
-	dbUser := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbSSL := os.Getenv("DB_SSLMODE")
-
-	// Формирование connStr (строки подключения) из переменных окружения
-	connStr := fmt.Sprintf(
+func (c *Config) ConnStr() string {
+	return fmt.Sprintf(
 		"user=%s password=%s dbname=%s host=%s port=%s sslmode=%s",
-		dbUser, dbPassword, dbName, dbHost, dbPort, dbSSL,
+		c.DB.User, c.DB.Password, c.DB.Name, c.DB.Host, c.DB.Port, c.DB.SSLMode,
 	)
-
-	return connStr, nil
 }
