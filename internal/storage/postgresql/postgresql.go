@@ -72,7 +72,7 @@ func New() (*Storage, error) {
 }
 
 // Сохранение тренировки в базу данных
-func (s *Storage) SaveWorkout(user_id int, date time.Time, excercise []models.Excercise) (string, error) {
+func (s *Storage) SaveWorkout(user_id int, date time.Time, excercise []models.Exercise) (string, error) {
 
 	const op = "storage.postgresql.SaveWorkout"
 
@@ -148,7 +148,7 @@ func (s *Storage) GetWorkout(workoutid int) (*models.Workout, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var ex models.Excercise
+		var ex models.Exercise
 		if err := rows.Scan(&ex.ExcName, &ex.Weight, &ex.Sets, &ex.Reps); err != nil {
 			return nil, fmt.Errorf("%s: scan excercise: %w", op, err)
 		}

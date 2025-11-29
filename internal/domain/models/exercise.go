@@ -1,6 +1,6 @@
 package models
 
-type Excercise struct {
+type Exercise struct {
 	ExcName string
 	Weight  float64
 	Sets    int

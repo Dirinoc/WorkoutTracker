@@ -6,5 +6,5 @@ type Workout struct {
 	ID         int
 	UserID     int
 	Date       time.Time
-	Excercises []Excercise
+	Excercises []Exercise
 }
