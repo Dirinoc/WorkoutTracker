@@ -7,7 +7,6 @@ import (
 )
 
 func main() {
-
 	storage, err := postgresql.New()
 	if err != nil {
 		panic("failed to initialize storage: " + err.Error())
