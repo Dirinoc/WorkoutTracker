@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"WorkoutTracker/internal/domain/models"
-	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -35,184 +35,108 @@ type WorkoutService interface {
 }
 
 // Создать новый хендлер (gin.HandlerFunc allows use of go funcs as http handlers)
-// TODO: Сделать нормальные логи, разобраться как писать ошибки нормально, пока так (Line 36, 45)
-func New(workout WorkoutService) gin.HandlerFunc {
+// TODO: remove logs (unnecessary) and const ops
+// TODO: Condense funcs into one (preferably understand it fully)
+func SaveWorkout(workout WorkoutService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		const op = "handlers.workout.save.New"
 
 		var req Request
 
+		// Bind JSON
 		if err := c.ShouldBindJSON(&req); err != nil {
-			slog.Error("failed to decode request body", slog.String("op", op))
-
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error":   "failed to decode request",
-				"details": err.Error(),
-			})
-		}
-
-		fmt.Printf("request body decoded")
-
-		if err := validator.New().Struct(req); err != nil {
-			validateErr := err.(validator.ValidationErrors)
-
-			slog.Error("invalid request", slog.String("op", op))
-
-			// Общая ошибка, написана пока так
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "invalid request",
-			})
-
-			// Детализированные ошибки валидации (создаем массив заполняемый ошибками)
-			errs := make(map[string]string)
-			for _, fe := range validateErr {
-				errs[fe.Field()] = fe.Tag() // например: "Email": "required"
-			}
-
-			c.JSON(http.StatusBadRequest, gin.H{
-				"validation_errors": errs,
-			})
-
+			slog.Error("failed to decode request body", slog.String("op", op), slog.Any("err", err))
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		// TODO: сделать автоматическое заполнение айди тренировки
+		slog.Info("request body decoded", slog.String("op", op))
 
-		// Сохраняем тренировку через интерфейс и передаем пользователю айди созданной тренировки
-		id, err := workout.SaveWorkout(req.ID, req.UserID, req.Date, req.Exercises)
+		// Validate
+		if err := validator.New().Struct(req); err != nil {
+			validateErr := err.(validator.ValidationErrors)
+
+			errs := make(map[string]string)
+			for _, fe := range validateErr {
+				errs[fe.Field()] = fe.Tag()
+			}
+
+			slog.Error("invalid request", slog.String("op", op), slog.Any("err", errs))
+			c.JSON(http.StatusBadRequest, gin.H{"validation_errors": errs})
+			return
+		}
+
+		// ID is auto-generated in DB — ignore req.ID
+		id, err := workout.SaveWorkout(0, req.UserID, req.Date, req.Exercises)
 		if err != nil {
-			slog.Error("failed to save workout", slog.String("op", op))
-
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "failed to save workout",
-			})
-
+			slog.Error("failed to save workout", slog.String("op", op), slog.Any("err", err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
 		slog.Info("workout saved", slog.String("op", op), slog.Int64("id", id))
 
-		c.JSON(http.StatusOK, Response{
-			WorkoutID: int(id),
-		})
+		c.JSON(http.StatusOK, Response{WorkoutID: int(id)})
 	}
 }
 
-// Delete workout using date
+// Delete workout using date (ID for now will change for date later)
 func DeleteWorkout(workout WorkoutService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		const op = "handlers.workout.delete.DeleteWorkout"
 
-		var req WorkoutIDRequest
-
-		if err := c.ShouldBindJSON(&req); err != nil {
-			slog.Error("failed to decode request body", slog.String("op", op))
-
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error":   "failed to decode request",
-				"details": err.Error(),
-			})
-		}
-
-		fmt.Printf("request body decoded")
-
-		if err := validator.New().Struct(req); err != nil {
-			validateErr := err.(validator.ValidationErrors)
-
-			slog.Error("invalid request", slog.String("op", op))
-
-			// Общая ошибка, написана пока так
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "invalid request",
-			})
-
-			// Детализированные ошибки валидации (создаем массив заполняемый ошибками)
-			errs := make(map[string]string)
-			for _, fe := range validateErr {
-				errs[fe.Field()] = fe.Tag() // например: "Email": "required"
-			}
-
-			c.JSON(http.StatusBadRequest, gin.H{
-				"validation_errors": errs,
-			})
-		}
-
-		// Удаляем тренировку через интерфейс
-		err := workout.DeleteWorkout(req.WorkoutID)
+		// Extract workout ID from URL
+		idStr := c.Param("id")
+		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			slog.Error("failed to save workout", slog.String("op", op))
-
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "failed to save workout",
-			})
-
+			slog.Error("invalid workout id", slog.String("op", op))
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid workout id"})
 			return
 		}
 
-		slog.Info("workout saved", slog.String("op", op), slog.Int64("id", int64(req.WorkoutID)))
+		// Delete workout via service
+		err = workout.DeleteWorkout(id)
+		if err != nil {
+			slog.Error("failed to delete workout", slog.String("op", op), slog.Int("id", id))
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "failed to delete workout",
+			})
+			return
+		}
 
-		c.JSON(http.StatusOK, Response{
-			WorkoutID: int(req.WorkoutID),
+		slog.Info("workout deleted", slog.String("op", op), slog.Int("id", id))
+
+		c.JSON(http.StatusOK, gin.H{
+			"message":    "Workout deleted successfully",
+			"workout_id": id,
 		})
-
 	}
-
 }
 
 func GetWorkout(workout WorkoutService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		const op = "handlers.workout.get.GetWorkout"
 
-		var req WorkoutIDRequest
-
-		if err := c.ShouldBindJSON(&req); err != nil {
-			slog.Error("failed to decode request body", slog.String("op", op))
-
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error":   "failed to decode request",
-				"details": err.Error(),
-			})
-		}
-
-		fmt.Printf("request body decoded")
-
-		if err := validator.New().Struct(req); err != nil {
-			validateErr := err.(validator.ValidationErrors)
-
-			slog.Error("invalid request", slog.String("op", op))
-
-			// Общая ошибка, написана пока так
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "invalid request",
-			})
-
-			// Детализированные ошибки валидации (создаем массив заполняемый ошибками)
-			errs := make(map[string]string)
-			for _, fe := range validateErr {
-				errs[fe.Field()] = fe.Tag() // например: "Email": "required"
-			}
-
-			c.JSON(http.StatusBadRequest, gin.H{
-				"validation_errors": errs,
-			})
-		}
-
-		_, err := workout.GetWorkout(req.WorkoutID)
+		// Extract workout ID from URL: /workouts/:id
+		idStr := c.Param("id")
+		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			slog.Error("failed to get workout", slog.String("op", op))
-
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "failed to get workout",
-			})
-
+			slog.Error("invalid workout id", slog.String("op", op))
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid workout id"})
 			return
 		}
 
-		slog.Info("workout found", slog.String("op", op), slog.Int64("id", int64(req.WorkoutID)))
+		// Fetch workout from service
+		w, err := workout.GetWorkout(id)
+		if err != nil {
+			slog.Error("failed to get workout", slog.String("op", op), slog.Int("id", id))
+			c.JSON(http.StatusNotFound, gin.H{"error": "workout not found"})
+			return
+		}
 
-		c.JSON(http.StatusOK, Response{
-			WorkoutID: int(req.WorkoutID),
-		})
+		slog.Info("workout found", slog.String("op", op), slog.Int("id", id))
 
+		// Send full workout struct to client
+		c.JSON(http.StatusOK, w)
 	}
 }
