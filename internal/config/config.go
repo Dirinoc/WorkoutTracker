@@ -9,12 +9,11 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// TODO: AppSecret (auth)
 type Config struct {
-	Env         string `yaml:"env" env-default:"local"`
-	StoragePath string `yaml:"storage_path" env-required:"true"`
-	HTTPServer  `yaml:"http_server"`
-	AppSecret   string `yaml:"app_secret" env-required:"true" env:"APP_SECRET"`
-	DB          `yaml:"db"`
+	Env        string `yaml:"env" env-default:"local"`
+	HTTPServer `yaml:"http_server"`
+	DB         `yaml:"db"`
 }
 
 type HTTPServer struct {
