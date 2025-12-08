@@ -4,6 +4,7 @@ import (
 	"WorkoutTracker/internal/config"
 	"WorkoutTracker/internal/storage/postgresql"
 	"WorkoutTracker/internal/transport/http/handlers"
+	"WorkoutTracker/internal/usecases"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -25,11 +26,9 @@ func main() {
 	}
 	log.Println("Storage initialised successfully")
 
-	_ = storage
+	workoutService := usecases.NewWorkoutService(storage)
 
 	router := gin.Default()
-
-	workoutService := storage
 
 	// Group routes under /workouts
 	workoutRoutes := router.Group("/workouts")

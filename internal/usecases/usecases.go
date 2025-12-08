@@ -19,7 +19,7 @@ var (
 // WorkoutStore описывает минимальный набор операций, которые нужны сервису.
 // Это интерфейс для инверсии зависимости от конкретной реализации хранилища.
 type WorkoutStore interface {
-	SaveWorkout(userID int, date time.Time, exercises []models.Exercise) (int64, error)
+	SaveWorkout(ID, userID int, date time.Time, exercises []models.Exercise) (int64, error)
 	GetWorkout(workoutID int) (models.Workout, error)
 	DeleteWorkout(workoutID int) error
 }
@@ -35,7 +35,7 @@ func NewWorkoutService(store WorkoutStore) *WorkoutService {
 	}
 }
 
-func (s *WorkoutService) SaveWorkout(userID int, date time.Time, exercises []models.Exercise) (int64, error) {
+func (s *WorkoutService) SaveWorkout(ID, userID int, date time.Time, exercises []models.Exercise) (int64, error) {
 	const op = "usecases.WorkoutService.SaveWorkout"
 
 	// Валидация
@@ -64,7 +64,7 @@ func (s *WorkoutService) SaveWorkout(userID int, date time.Time, exercises []mod
 	}
 
 	// Передает валидированные данные на хранение
-	workoutID, err := s.store.SaveWorkout(userID, date, exercises)
+	workoutID, err := s.store.SaveWorkout(ID, userID, date, exercises)
 	if err != nil {
 		return 0, fmt.Errorf("%s: storage save: %w", op, err)
 	}

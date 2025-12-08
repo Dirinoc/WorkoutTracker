@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"WorkoutTracker/internal/domain/models"
-	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -39,18 +38,14 @@ type WorkoutService interface {
 // TODO: Condense funcs into one (preferably understand it fully)
 func SaveWorkout(workout WorkoutService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		const op = "handlers.workout.save.New"
 
 		var req Request
 
 		// Bind JSON
 		if err := c.ShouldBindJSON(&req); err != nil {
-			slog.Error("failed to decode request body", slog.String("op", op), slog.Any("err", err))
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
-		slog.Info("request body decoded", slog.String("op", op))
 
 		// Validate
 		if err := validator.New().Struct(req); err != nil {
@@ -61,7 +56,6 @@ func SaveWorkout(workout WorkoutService) gin.HandlerFunc {
 				errs[fe.Field()] = fe.Tag()
 			}
 
-			slog.Error("invalid request", slog.String("op", op), slog.Any("err", errs))
 			c.JSON(http.StatusBadRequest, gin.H{"validation_errors": errs})
 			return
 		}
@@ -69,12 +63,9 @@ func SaveWorkout(workout WorkoutService) gin.HandlerFunc {
 		// ID is auto-generated in DB — ignore req.ID
 		id, err := workout.SaveWorkout(0, req.UserID, req.Date, req.Exercises)
 		if err != nil {
-			slog.Error("failed to save workout", slog.String("op", op), slog.Any("err", err))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-
-		slog.Info("workout saved", slog.String("op", op), slog.Int64("id", id))
 
 		c.JSON(http.StatusOK, Response{WorkoutID: int(id)})
 	}
@@ -83,13 +74,11 @@ func SaveWorkout(workout WorkoutService) gin.HandlerFunc {
 // Delete workout using date (ID for now will change for date later)
 func DeleteWorkout(workout WorkoutService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		const op = "handlers.workout.delete.DeleteWorkout"
 
 		// Extract workout ID from URL
 		idStr := c.Param("id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			slog.Error("invalid workout id", slog.String("op", op))
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid workout id"})
 			return
 		}
@@ -97,14 +86,11 @@ func DeleteWorkout(workout WorkoutService) gin.HandlerFunc {
 		// Delete workout via service
 		err = workout.DeleteWorkout(id)
 		if err != nil {
-			slog.Error("failed to delete workout", slog.String("op", op), slog.Int("id", id))
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "failed to delete workout",
 			})
 			return
 		}
-
-		slog.Info("workout deleted", slog.String("op", op), slog.Int("id", id))
 
 		c.JSON(http.StatusOK, gin.H{
 			"message":    "Workout deleted successfully",
@@ -115,13 +101,11 @@ func DeleteWorkout(workout WorkoutService) gin.HandlerFunc {
 
 func GetWorkout(workout WorkoutService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		const op = "handlers.workout.get.GetWorkout"
 
 		// Extract workout ID from URL: /workouts/:id
 		idStr := c.Param("id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			slog.Error("invalid workout id", slog.String("op", op))
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid workout id"})
 			return
 		}
@@ -129,12 +113,9 @@ func GetWorkout(workout WorkoutService) gin.HandlerFunc {
 		// Fetch workout from service
 		w, err := workout.GetWorkout(id)
 		if err != nil {
-			slog.Error("failed to get workout", slog.String("op", op), slog.Int("id", id))
 			c.JSON(http.StatusNotFound, gin.H{"error": "workout not found"})
 			return
 		}
-
-		slog.Info("workout found", slog.String("op", op), slog.Int("id", id))
 
 		// Send full workout struct to client
 		c.JSON(http.StatusOK, w)
