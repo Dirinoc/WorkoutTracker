@@ -38,10 +38,11 @@ type WorkoutService struct {
 	log   *slog.Logger
 }
 
-// Пока такой конструктор, мб потом добавлю что-нибудь еще сюды
+// Пока такой конструктор, мб потом добавлю что-нибудь еще сюды. TODO: спросить у Дани чо оно и каво
 func NewWorkoutService(store WorkoutStore) *WorkoutService {
 	return &WorkoutService{
 		store: store,
+		log:   slog.Default(),
 	}
 }
 

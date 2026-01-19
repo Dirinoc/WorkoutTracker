@@ -37,8 +37,8 @@ func (m *mockWorkoutStore) DeleteWorkout(workoutID int) error {
 	return m.delErr
 }
 
-// Тесты для WorkoutService. Берем адрес &mockWorkoutStore c айди 52, затем вызываем NewWorkoutService по адресу (&) 52, и проводим дальнейшие операции.
-func TestWorkoutService_SaveWorkout(t *testing.T) {
+// Тест вызова и работы SaveWorkout. Берем адрес &mockWorkoutStore c айди 52, затем вызываем NewWorkoutService по адресу (&) 52, и проводим дальнейшие операции.
+func TestUsecases_SaveWorkout(t *testing.T) {
 	store := &mockWorkoutStore{
 		saveWorkout: 52,
 	}
@@ -76,7 +76,7 @@ func TestWorkoutService_SaveWorkout(t *testing.T) {
 }
 
 // Тест вызова GetWorkout, задаем ожидаемое значение (expected ID 10), создаем mockWorkoutStore с этим значением, вызываем сервис и проверяем результат.
-func TestWorkoutService_GetWorkout(t *testing.T) {
+func TestUsecases_GetWorkout(t *testing.T) {
 	expected := models.Workout{ID: 10}
 
 	store := &mockWorkoutStore{
@@ -101,7 +101,7 @@ func TestWorkoutService_GetWorkout(t *testing.T) {
 }
 
 // Тест вызова DeleteWorkout, создаем mockWorkoutStore, вызываем сервис и проверяем результат.
-func TestWorkoutService_DeleteWorkout(t *testing.T) {
+func TestUsecases_DeleteWorkout(t *testing.T) {
 	store := &mockWorkoutStore{}
 
 	service := NewWorkoutService(store)
