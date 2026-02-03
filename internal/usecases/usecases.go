@@ -29,7 +29,7 @@ var (
 // Это интерфейс для инверсии зависимости от конкретной реализации хранилища.
 type WorkoutStore interface {
 	SaveWorkout(ID, userID int, date time.Time, exercises []models.Exercise) (int64, error)
-	GetWorkout(workoutID int) (models.Workout, error)
+	GetWorkout(Date time.Time) (models.Workout, error)
 	DeleteWorkout(workoutID int) error
 }
 
@@ -100,18 +100,18 @@ func (s *WorkoutService) SaveWorkout(ID, userID int, date time.Time, exercises [
 	return workoutID, nil
 }
 
-// GetWorkout — получает тренировку по id (без проверки владельца)
-func (s *WorkoutService) GetWorkout(workoutID int) (models.Workout, error) {
+// GetWorkout — получает тренировку по дате (без проверки владельца)
+func (s *WorkoutService) GetWorkout(date time.Time) (models.Workout, error) {
 	const op = "service.WorkoutService.GetWorkout"
 
 	log := s.log.With(
 		slog.String("op", op),
-		slog.Int("workout_id", workoutID),
+		slog.Time("date", date),
 	)
 
 	log.Info("workout fetching process begin")
 
-	w, err := s.store.GetWorkout(workoutID)
+	w, err := s.store.GetWorkout(date)
 	if err != nil {
 		log.Error("failed to fetch workout")
 		return models.Workout{}, fmt.Errorf("%s: %w", op, err)

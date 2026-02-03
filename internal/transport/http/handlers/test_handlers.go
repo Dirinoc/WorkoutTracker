@@ -17,7 +17,7 @@ type mockWorkoutService struct {
 	delCalled  bool
 
 	returnWorkout models.Workout
-	requestID     int
+	requestDate   time.Time
 	getErr        error
 
 	saveResult int64
@@ -38,9 +38,9 @@ func (m *mockWorkoutService) DeleteWorkout(workoutID int) error {
 	return nil
 }
 
-func (m *mockWorkoutService) GetWorkout(id int) (models.Workout, error) {
-	m.getCalled = true // фиксируем факт вызова
-	m.requestID = id   // записываем айди из URL
+func (m *mockWorkoutService) GetWorkout(date time.Time) (models.Workout, error) {
+	m.getCalled = true   // фиксируем факт вызова
+	m.requestDate = date // записываем айди из URL
 	return m.returnWorkout, m.getErr
 }
 
@@ -91,10 +91,14 @@ func TestWorkoutService_GetWorkout(t *testing.T) {
 
 	router := gin.New()
 
-	// mockService это НЕ РЕЗУЛЬТАТ ТЕСТА, это, по сути, его сценарий. Мы забиваем сюда данные для проведения теста. В данном случае - мы хотим получить тренировку с айди 10. Уточнить у Дани
+	expectedDate := time.Date(2026, time.February, 4, 12, 0, 0, 0, time.UTC)
+
+	// mockService это НЕ РЕЗУЛЬТАТ ТЕСТА, это, по сути, его сценарий. Мы забиваем сюда данные для проведения теста. В данном случае - мы хотим получить тренировку с датой 4 февраля 2006 года. Уточнить у Дани
 	mockService := &mockWorkoutService{
-		returnWorkout: models.Workout{ID: 10},
-		getErr:        nil,
+		returnWorkout: models.Workout{
+			Date: time.Date(2026, time.February, 4, 12, 0, 0, 0, time.UTC),
+		},
+		getErr: nil,
 	}
 
 	router.GET("/workouts/:id", GetWorkout(mockService))
@@ -117,8 +121,8 @@ func TestWorkoutService_GetWorkout(t *testing.T) {
 		t.Fatalf("expected GetWorkout to be called")
 	}
 
-	if mockService.requestID != 10 {
-		t.Fatalf("expected id 10, got %d", mockService.requestID)
+	if !mockService.requestDate.Equal(expectedDate) {
+		t.Fatalf("expected date %v, got %v", expectedDate, mockService.requestDate)
 	}
 }
 

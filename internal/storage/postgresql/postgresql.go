@@ -111,17 +111,16 @@ func (s *Storage) SaveWorkout(ID int, user_id int, date time.Time, exercise []mo
 }
 
 // Получить тренировку из базы данных по ID
-// TODO: fix returns (bandaid fix for now returning models.Workout{}) - Change to request workout by Date
 // TODO: What if there are n workouts in one day?
-func (s *Storage) GetWorkout(workoutid int) (models.Workout, error) {
+func (s *Storage) GetWorkout(date time.Time) (models.Workout, error) {
 	const op = "storage.postgresql.GetWorkout"
 
 	var w models.Workout
 
 	// Fetch workout info
 	err := s.db.QueryRow(
-		"SELECT id, user_id, date FROM workouts WHERE id = $1",
-		workoutid,
+		"SELECT id, user_id, date FROM workouts WHERE date::date = $1::date ORDER BY date DESC LIMIT 1",
+		date,
 	).Scan(&w.ID, &w.UserID, &w.Date)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

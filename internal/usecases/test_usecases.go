@@ -27,7 +27,7 @@ func (m *mockWorkoutStore) SaveWorkout(ID, userID int, date time.Time, exercises
 	return m.saveWorkout, m.saveErr
 }
 
-func (m *mockWorkoutStore) GetWorkout(workoutID int) (models.Workout, error) {
+func (m *mockWorkoutStore) GetWorkout(date time.Time) (models.Workout, error) {
 	m.getCalled = true
 	return m.getWorkoutID, m.getErr
 }
@@ -75,9 +75,13 @@ func TestUsecases_SaveWorkout(t *testing.T) {
 
 }
 
-// Тест вызова GetWorkout, задаем ожидаемое значение (expected ID 10), создаем mockWorkoutStore с этим значением, вызываем сервис и проверяем результат.
+// Тест вызова GetWorkout, задаем ожидаемое значение (дата 2006 год), создаем mockWorkoutStore с этим значением, вызываем сервис и проверяем результат.
 func TestUsecases_GetWorkout(t *testing.T) {
-	expected := models.Workout{ID: 10}
+	date := time.Date(2006, 1, 2, 0, 0, 0, 0, time.UTC)
+
+	expected := models.Workout{
+		Date: date,
+	}
 
 	store := &mockWorkoutStore{
 		getWorkoutID: expected,
@@ -85,14 +89,14 @@ func TestUsecases_GetWorkout(t *testing.T) {
 
 	service := NewWorkoutService(store)
 
-	w, err := service.GetWorkout(10)
+	w, err := service.GetWorkout(date)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if w.ID != expected.ID {
-		t.Fatalf("expected workout ID %d, got %d", expected.ID, w.ID)
+	if w.Date != expected.Date {
+		t.Fatalf("expected proper date %v, got %v", expected.Date, w.Date)
 	}
 
 	if !store.getCalled {

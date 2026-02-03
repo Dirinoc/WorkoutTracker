@@ -31,7 +31,7 @@ type (
 type WorkoutService interface {
 	SaveWorkout(ID, UserID int, Date time.Time, Exercises []models.Exercise) (int64, error)
 	DeleteWorkout(WorkoutID int) error
-	GetWorkout(WorkoutID int) (models.Workout, error)
+	GetWorkout(Date time.Time) (models.Workout, error)
 }
 
 // Respond with error in JSON format (внутренний пакет)
@@ -104,15 +104,18 @@ func GetWorkout(workout WorkoutService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		// Extract workout ID from URL: /workouts/:id
-		idStr := c.Param("id")
-		id, err := strconv.Atoi(idStr)
+		dateStr := c.Param("date")
+
+		// Parsing the date
+		date, err := time.Parse("2006-01-02", dateStr)
+
 		if err != nil {
-			RespondErrorJSON(c, http.StatusBadRequest, "invalid workout id")
+			RespondErrorJSON(c, http.StatusBadRequest, "invalid date format, expected YYYY-MM-DD")
 			return
 		}
 
 		// Fetch workout from service
-		w, err := workout.GetWorkout(id)
+		w, err := workout.GetWorkout(date)
 		if err != nil {
 			RespondErrorJSON(c, http.StatusNotFound, "workout not found")
 			return
