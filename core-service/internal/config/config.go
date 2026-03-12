@@ -9,11 +9,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// TODO: AppSecret (auth)
 type Config struct {
 	Env        string `yaml:"env" env-default:"local"`
 	HTTPServer `yaml:"http_server"`
 	DB         `yaml:"db"`
+	Clients    ClientsConfig `yaml:"clients"`
+	AppSecret  string        `yaml:"app_secret" env-required:"true" env:"APP_SECRET"`
 }
 
 type HTTPServer struct {
@@ -27,6 +28,10 @@ type Client struct {
 	Timeout      time.Duration `yaml:"timeout"`
 	RetriesCount int           `yaml:"retries_count"`
 	Insecure     bool          `yaml:"insecure"`
+}
+
+type ClientsConfig struct {
+	SSO Client `yaml:"sso"`
 }
 
 type DB struct {

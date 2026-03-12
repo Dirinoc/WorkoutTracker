@@ -5,7 +5,11 @@ import (
 	"WorkoutTracker/internal/storage/postgresql"
 	"WorkoutTracker/internal/transport/http/handlers"
 	"WorkoutTracker/internal/usecases"
-	"log"
+	"context"
+	"log/slog"
+	"os"
+
+	ssogrpc "WorkoutTracker/internal/clients/sso/grpc"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
@@ -13,18 +17,41 @@ import (
 
 func main() {
 
+	// Инициализация логгера
+	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+
 	// Загружаем конфиг
 	cfg, err := config.MustLoad()
+
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		log.Error("failed to load config", slog.Any("err", err))
+		os.Exit(1)
 	}
-	log.Println("Config initialised successfully")
+
+	log.Info("config initialised successfully")
+
+	ssoClient, err := ssogrpc.New(
+		context.Background(),
+		log,
+		cfg.Clients.SSO.Address,
+		cfg.Clients.SSO.Timeout,
+		cfg.Clients.SSO.RetriesCount,
+	)
+	if err != nil {
+		log.Error("failed to init sso client", slog.Any("err", err))
+		os.Exit(1)
+	}
+
+	ssoClient.IsAdmin(context.Background(), 1)
 
 	storage, err := postgresql.New(cfg)
 	if err != nil {
 		panic("failed to initialize storage: " + err.Error())
 	}
-	log.Println("Storage initialised successfully")
+
+	log.Info("storage initialised successfully")
 
 	workoutService := usecases.NewWorkoutService(storage)
 
