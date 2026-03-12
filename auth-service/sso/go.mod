@@ -3,12 +3,11 @@ module sso
 go 1.25.3
 
 require (
+	github.com/Dirinoc/protos/protos v0.0.0-20260308184317-160951858653
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/joho/godotenv v1.5.1
 	google.golang.org/grpc v1.79.2
 )
-
-require github.com/Dirinoc/protos/protos v0.0.0-20260308183141-9df4290c8a83
 
 require (
 	github.com/BurntSushi/toml v1.6.0 // indirect
